@@ -131,14 +131,15 @@ scene.add(rimLight);
 const orangeGroup=new THREE.Group();
 scene.add(orangeGroup);
 
-
-// NATURAL ORANGE PEEL TEXTURE
+// DETERMINISTIC TEXTURE RANDOMNESS
 let seed=73421;
+
 function random(){
   seed=(seed*16807)%2147483647;
   return (seed-1)/2147483646;
 }
 
+// NATURAL ORANGE PEEL TEXTURE
 function createOrangeTexture(){
   const size=2048;
   const canvas=document.createElement('canvas');
@@ -245,7 +246,8 @@ function createBumpTexture(){
     ctx.fill();
   }
 
-  return new THREE.CanvasTexture(canvas);
+  const texture=new THREE.CanvasTexture(canvas);
+  return texture;
 }
 
 const peelTexture=createOrangeTexture();
