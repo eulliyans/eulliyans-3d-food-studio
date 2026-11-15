@@ -76,8 +76,39 @@ for(let i=0;i<positions.count;i++){
 }
 geometry.computeVertexNormals();
 
-const material=new THREE.MeshStandardMaterial({
- color:0xff8a00,roughness:0.65,metalness:0
+const peelCanvas = document.createElement('canvas');
+peelCanvas.width = 1024;
+peelCanvas.height = 1024;
+
+const ctx = peelCanvas.getContext('2d');
+
+ctx.fillStyle = '#ff941c';
+ctx.fillRect(0, 0, 1024, 1024);
+
+// Natural orange peel pores
+for(let i = 0; i < 22000; i++){
+ const x = Math.random() * 1024;
+ const y = Math.random() * 1024;
+ const r = Math.random() * 1.5 + 0.4;
+
+ ctx.beginPath();
+ ctx.arc(x, y, r, 0, Math.PI * 2);
+ ctx.fillStyle = Math.random() > 0.5
+  ? 'rgba(130,55,0,0.20)'
+  : 'rgba(255,220,130,0.35)';
+ ctx.fill();
+}
+
+const peelTexture = new THREE.CanvasTexture(peelCanvas);
+peelTexture.colorSpace = THREE.SRGBColorSpace;
+
+const material = new THREE.MeshStandardMaterial({
+ color: 0xffffff,
+ map: peelTexture,
+ bumpMap: peelTexture,
+ bumpScale: 0.035,
+ roughness: 0.88,
+ metalness: 0
 });
 const fruit=new THREE.Mesh(geometry,material);
 fruit.scale.set(1,0.94,1);
