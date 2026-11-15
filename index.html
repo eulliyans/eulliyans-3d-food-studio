@@ -5,18 +5,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EULLIYAN'S 3D FOOD STUDIO</title>
+
 <style>
 *{box-sizing:border-box}
+
 body{
- margin:0;background:#101410;color:#fff;
- font-family:Arial,sans-serif;
- min-height:100vh;overflow:hidden
+  margin:0;
+  background:#101410;
+  color:#fff;
+  font-family:Arial,sans-serif;
+  min-height:100vh;
+  overflow:hidden;
 }
-header{padding:22px;text-align:center}
-h1{font-size:20px;letter-spacing:2px;margin:0}
-p{color:#a9b5a9;font-size:13px}
-#scene{width:100%;height:72vh;display:block}
-footer{text-align:center;color:#a9b5a9;font-size:12px}
+
+header{
+  padding:22px 12px 10px;
+  text-align:center;
+}
+
+h1{
+  font-size:clamp(20px,4vw,30px);
+  letter-spacing:3px;
+  margin:8px 0;
+}
+
+.subtitle{
+  color:#9da99b;
+  font-size:10px;
+  letter-spacing:3px;
+}
+
+#scene{
+  width:100%;
+  height:calc(100vh - 145px);
+  min-height:350px;
+  position:relative;
+}
+
+footer{
+  position:absolute;
+  bottom:18px;
+  left:0;
+  width:100%;
+  text-align:center;
+  color:#a6b09f;
+  font-size:10px;
+  letter-spacing:3px;
+  pointer-events:none;
+}
+
+canvas{display:block}
 </style>
 
 <script type="importmap">
@@ -27,128 +65,358 @@ footer{text-align:center;color:#a9b5a9;font-size:12px}
   }
 }
 </script>
-
 </head>
+
 <body>
+
 <header>
-<h1>EULLIYAN'S 3D FOOD STUDIO</h1>
-<p>ORIGINAL 3D FOOD CREATION · 001</p>
+  <h1>EULLIYAN'S 3D FOOD STUDIO</h1>
+  <div class="subtitle">
+    ORIGINAL 3D FOOD CREATION · 001
+  </div>
 </header>
+
 <div id="scene"></div>
+
 <footer>ORANGE · INTERACTIVE 3D MODEL</footer>
 
 <script type="module">
 import * as THREE from 'three';
-import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-const container=document.getElementById('scene');
-const scene=new THREE.Scene();
-scene.background=new THREE.Color('#101410');
+import { OrbitControls } from
+'three/addons/controls/OrbitControls.js';
 
-const camera=new THREE.PerspectiveCamera(
- 35,container.clientWidth/container.clientHeight,0.1,100
+const container = document.getElementById('scene');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x101410);
+
+const camera = new THREE.PerspectiveCamera(
+  38,
+  container.clientWidth/container.clientHeight,
+  0.1,
+  100
 );
-camera.position.set(0,0,6);
 
-const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(container.clientWidth,container.clientHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
+camera.position.set(0,0,5.5);
+
+const renderer = new THREE.WebGLRenderer({
+  antialias:true,
+  alpha:false
+});
+
+renderer.setSize(
+  container.clientWidth,
+  container.clientHeight
+);
+
+renderer.setPixelRatio(
+  Math.min(window.devicePixelRatio,2)
+);
+
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+
 container.appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0xffffff,0x49301a,2));
+const controls = new OrbitControls(
+  camera,
+  renderer.domElement
+);
 
-const light=new THREE.DirectionalLight(0xffffff,3);
-light.position.set(3,4,5);
-scene.add(light);
+controls.enableDamping = true;
+controls.enablePan = false;
+controls.minDistance = 4;
+controls.maxDistance = 8;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 1.1;
 
-const orange=new THREE.Group();
-scene.add(orange);
+// Studio lighting
+scene.add(new THREE.HemisphereLight(
+  0xfff0d8,
+  0x263323,
+  2
+));
 
-const geometry=new THREE.SphereGeometry(1,96,96);
-const positions=geometry.attributes.position;
-for(let i=0;i<positions.count;i++){
- const x=positions.getX(i);
- const y=positions.getY(i);
- const z=positions.getZ(i);
- const r=1+0.012*Math.sin(x*55)*Math.sin(y*55)*Math.sin(z*55);
- positions.setXYZ(i,x*r,y*r,z*r);
+const keyLight = new THREE.DirectionalLight(
+  0xffe1ae,
+  3.2
+);
+keyLight.position.set(-3,4,5);
+scene.add(keyLight);
+
+const fillLight = new THREE.DirectionalLight(
+  0xffffff,
+  1.4
+);
+fillLight.position.set(4,1,3);
+scene.add(fillLight);
+
+const rimLight = new THREE.PointLight(
+  0xff8b26,
+  18,
+  10
+);
+rimLight.position.set(1,2,-3);
+scene.add(rimLight);
+
+// Orange group
+const orangeGroup = new THREE.Group();
+scene.add(orangeGroup);
+
+// Procedural orange peel texture
+function createPeelTexture(){
+  const size = 1024;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext('2d');
+
+  const gradient = ctx.createLinearGradient(
+    0,0,size,size
+  );
+
+  gradient.addColorStop(0,'#ff9a16');
+  gradient.addColorStop(0.45,'#ff7900');
+  gradient.addColorStop(1,'#df5700');
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0,0,size,size);
+
+  for(let i=0;i<42000;i++){
+    const x = Math.random()*size;
+    const y = Math.random()*size;
+    const r = Math.random()*1.5+0.3;
+
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+
+    ctx.fillStyle = Math.random()>0.5
+      ? 'rgba(255,205,95,0.32)'
+      : 'rgba(130,48,0,0.18)';
+
+    ctx.fill();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+
+  return texture;
 }
+
+function createBumpTexture(){
+  const size = 1024;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#888';
+  ctx.fillRect(0,0,size,size);
+
+  for(let i=0;i<50000;i++){
+    const x = Math.random()*size;
+    const y = Math.random()*size;
+    const r = Math.random()*1.4+0.2;
+
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+
+    ctx.fillStyle = Math.random()>0.5
+      ? '#ffffff'
+      : '#555555';
+
+    ctx.fill();
+  }
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+const peel = createPeelTexture();
+const bump = createBumpTexture();
+
+// Slightly natural irregular orange shape
+const geometry = new THREE.SphereGeometry(
+  1.35,
+  128,
+  96
+);
+
+const positions = geometry.attributes.position;
+
+for(let i=0;i<positions.count;i++){
+  const x = positions.getX(i);
+  const y = positions.getY(i);
+  const z = positions.getZ(i);
+
+  const normalizedY = y/1.35;
+
+  const poleDip = Math.exp(
+    -Math.pow(Math.abs(normalizedY)-0.98,2)*180
+  );
+
+  const variation =
+    1
+    + 0.018*Math.sin(x*9+z*5)*Math.sin(y*7)
+    - 0.025*poleDip;
+
+  positions.setXYZ(
+    i,
+    x*variation,
+    y*(1-0.045*poleDip),
+    z*variation
+  );
+}
+
 geometry.computeVertexNormals();
 
-const peelCanvas = document.createElement('canvas');
-peelCanvas.width = 1024;
-peelCanvas.height = 1024;
-
-const ctx = peelCanvas.getContext('2d');
-
-ctx.fillStyle = '#ff941c';
-ctx.fillRect(0, 0, 1024, 1024);
-
-// Natural orange peel pores
-for(let i = 0; i < 22000; i++){
- const x = Math.random() * 1024;
- const y = Math.random() * 1024;
- const r = Math.random() * 1.5 + 0.4;
-
- ctx.beginPath();
- ctx.arc(x, y, r, 0, Math.PI * 2);
- ctx.fillStyle = Math.random() > 0.5
-  ? 'rgba(130,55,0,0.20)'
-  : 'rgba(255,220,130,0.35)';
- ctx.fill();
-}
-
-const peelTexture = new THREE.CanvasTexture(peelCanvas);
-peelTexture.colorSpace = THREE.SRGBColorSpace;
-
-const material = new THREE.MeshStandardMaterial({
- color: 0xffffff,
- map: peelTexture,
- bumpMap: peelTexture,
- bumpScale: 0.035,
- roughness: 0.88,
- metalness: 0
+const orangeMaterial = new THREE.MeshStandardMaterial({
+  map:peel,
+  bumpMap:bump,
+  bumpScale:0.035,
+  roughness:0.72,
+  metalness:0
 });
-const fruit=new THREE.Mesh(geometry,material);
-fruit.scale.set(1,0.94,1);
-orange.add(fruit);
 
-const stem=new THREE.Mesh(
- new THREE.CylinderGeometry(0.045,0.06,0.12,16),
- new THREE.MeshStandardMaterial({color:0x56351c})
+const orange = new THREE.Mesh(
+  geometry,
+  orangeMaterial
 );
-stem.position.y=0.94;
-orange.add(stem);
 
-const leaf=new THREE.Mesh(
- new THREE.SphereGeometry(0.2,24,24),
- new THREE.MeshStandardMaterial({color:0x397b31,roughness:0.8})
+orangeGroup.add(orange);
+
+// Stem
+const stem = new THREE.Mesh(
+  new THREE.CylinderGeometry(
+    0.045,
+    0.065,
+    0.19,
+    16
+  ),
+  new THREE.MeshStandardMaterial({
+    color:0x65401b,
+    roughness:0.9
+  })
 );
-leaf.scale.set(1.5,0.22,0.65);
-leaf.position.set(0.18,1.02,0);
-leaf.rotation.z=-0.35;
-orange.add(leaf);
 
-const controls=new OrbitControls(camera,renderer.domElement);
-controls.enableDamping=true;
-controls.autoRotate=true;
-controls.autoRotateSpeed=1.2;
+stem.position.set(0,1.31,0);
+stem.rotation.z=-0.12;
+orangeGroup.add(stem);
 
-function animate(){
- requestAnimationFrame(animate);
- controls.update();
- renderer.render(scene,camera);
+// Green sepals
+for(let i=0;i<5;i++){
+  const angle = (i/5)*Math.PI*2;
+
+  const sepal = new THREE.Mesh(
+    new THREE.ConeGeometry(0.09,0.25,8),
+    new THREE.MeshStandardMaterial({
+      color:0x345d22,
+      roughness:0.9
+    })
+  );
+
+  sepal.position.set(
+    Math.cos(angle)*0.09,
+    1.24,
+    Math.sin(angle)*0.09
+  );
+
+  sepal.rotation.z=Math.cos(angle)*0.65;
+  sepal.rotation.x=Math.sin(angle)*0.65;
+
+  orangeGroup.add(sepal);
 }
+
+// Leaf
+const leafShape = new THREE.Shape();
+
+leafShape.moveTo(0,0);
+leafShape.quadraticCurveTo(0.35,0.28,0.75,0.08);
+leafShape.quadraticCurveTo(0.38,-0.18,0,0);
+
+const leafGeometry = new THREE.ShapeGeometry(
+  leafShape,
+  24
+);
+
+const leafMaterial = new THREE.MeshStandardMaterial({
+  color:0x39752d,
+  side:THREE.DoubleSide,
+  roughness:0.8
+});
+
+const leaf = new THREE.Mesh(
+  leafGeometry,
+  leafMaterial
+);
+
+leaf.position.set(0.04,1.32,0);
+leaf.rotation.x=-0.25;
+leaf.rotation.z=0.2;
+leaf.scale.set(0.9,0.9,0.9);
+
+orangeGroup.add(leaf);
+
+// Soft shadow below the orange
+const shadowCanvas = document.createElement('canvas');
+shadowCanvas.width=256;
+shadowCanvas.height=256;
+
+const shadowCtx = shadowCanvas.getContext('2d');
+
+const shadowGradient = shadowCtx.createRadialGradient(
+  128,128,5,
+  128,128,120
+);
+
+shadowGradient.addColorStop(0,'rgba(0,0,0,0.45)');
+shadowGradient.addColorStop(1,'rgba(0,0,0,0)');
+
+shadowCtx.fillStyle=shadowGradient;
+shadowCtx.fillRect(0,0,256,256);
+
+const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
+
+const shadow = new THREE.Mesh(
+  new THREE.PlaneGeometry(3.4,1.8),
+  new THREE.MeshBasicMaterial({
+    map:shadowTexture,
+    transparent:true,
+    depthWrite:false
+  })
+);
+
+shadow.rotation.x=-Math.PI/2;
+shadow.position.y=-1.55;
+scene.add(shadow);
+
+// Animation
+function animate(){
+  requestAnimationFrame(animate);
+
+  controls.update();
+  renderer.render(scene,camera);
+}
+
 animate();
 
+// Responsive screen
 window.addEventListener('resize',()=>{
- const w=container.clientWidth;
- const h=container.clientHeight;
- camera.aspect=w/h;
- camera.updateProjectionMatrix();
- renderer.setSize(w,h);
+  const width=container.clientWidth;
+  const height=container.clientHeight;
+
+  camera.aspect=width/height;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(width,height);
 });
 </script>
+
 </body>
 </html>
