@@ -1,15 +1,15 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101410">
 <title>EULLIYAN'S 3D FOOD STUDIO</title>
 
 <style>
 *{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0}
 body{
-  margin:0;
   background:#101410;
   color:#fff;
   font-family:Arial,sans-serif;
@@ -17,6 +17,8 @@ body{
   overflow:hidden;
 }
 header{
+  position:relative;
+  z-index:2;
   padding:22px 12px 10px;
   text-align:center;
 }
@@ -35,7 +37,9 @@ h1{
   height:calc(100vh - 145px);
   min-height:350px;
   position:relative;
+  touch-action:pan-y;
 }
+#scene canvas{display:block;width:100%;height:100%}
 footer{
   position:absolute;
   bottom:18px;
@@ -46,8 +50,23 @@ footer{
   font-size:10px;
   letter-spacing:3px;
   pointer-events:none;
+  z-index:2;
 }
-canvas{display:block}
+#load-message{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  color:#a6b09f;
+  font-size:12px;
+  letter-spacing:2px;
+  pointer-events:none;
+}
+@media(max-width:600px){
+  header{padding-top:18px}
+  #scene{height:calc(100vh - 125px);min-height:320px}
+  footer{bottom:14px;font-size:9px}
+}
 </style>
 
 <script type="importmap">
@@ -61,201 +80,231 @@ canvas{display:block}
 </head>
 
 <body>
-
 <header>
   <h1>EULLIYAN'S 3D FOOD STUDIO</h1>
-  <div class="subtitle">ORIGINAL 3D FOOD CREATION · 001</div>
+  <div class="subtitle">ORIGINAL 3D FOOD CREATION Â· 001</div>
 </header>
 
-<div id="scene"></div>
+<div id="scene">
+  <div id="load-message">PREPARING 3D MODELâ¦</div>
+</div>
 
-<footer>ORANGE · INTERACTIVE 3D MODEL</footer>
+<footer>ORANGE Â· INTERACTIVE 3D MODEL</footer>
 
 <script type="module">
 import * as THREE from 'three';
-import {OrbitControls} from
-'three/addons/controls/OrbitControls.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 
-const container=document.getElementById('scene');
+const container = document.getElementById('scene');
+const loadMessage = document.getElementById('load-message');
 
-const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x101410);
+let seed = 73421;
+function random(){
+  seed = (seed * 16807) % 2147483647;
+  return (seed - 1) / 2147483646;
+}
+function clamp(value,min,max){
+  return Math.max(min,Math.min(max,value));
+}
 
-const camera=new THREE.PerspectiveCamera(
+/* -------------------------------------------------------
+   SCENE â original studio layout and camera are preserved
+------------------------------------------------------- */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x101410);
+
+const camera = new THREE.PerspectiveCamera(
   38,
-  container.clientWidth/container.clientHeight,
+  container.clientWidth / container.clientHeight,
   0.1,
   100
 );
 camera.position.set(0,0,5.5);
 
-const renderer=new THREE.WebGLRenderer({
-  antialias:true,
-  alpha:false
-});
-renderer.setSize(
-  container.clientWidth,
-  container.clientHeight
-);
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.12;
+let renderer;
+try{
+  renderer = new THREE.WebGLRenderer({
+    antialias:true,
+    alpha:false,
+    powerPreference:'high-performance'
+  });
+}catch(error){
+  loadMessage.textContent = '3D GRAPHICS ARE NOT AVAILABLE IN THIS BROWSER';
+  throw error;
+}
+
+renderer.setSize(container.clientWidth,container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1,1.6));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
 container.appendChild(renderer.domElement);
 
-const controls=new OrbitControls(camera,renderer.domElement);
-controls.enableDamping=true;
-controls.enablePan=false;
-controls.minDistance=4;
-controls.maxDistance=8;
-controls.autoRotate=true;
-controls.autoRotateSpeed=1.1;
+const controls = new OrbitControls(camera,renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.055;
+controls.enablePan = false;
+controls.minDistance = 4;
+controls.maxDistance = 8;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.85;
+controls.target.set(0,0.02,0);
 
-// NATURAL STUDIO LIGHTING
-scene.add(new THREE.HemisphereLight(
-  0xffead0,0x263323,1.8
-));
+/* -------------------------------------------------------
+   SOFT, WARM STUDIO LIGHTING
+------------------------------------------------------- */
+scene.add(new THREE.HemisphereLight(0xfff0dc,0x263323,1.45));
 
-const keyLight=new THREE.DirectionalLight(0xffe4bd,2.7);
-keyLight.position.set(-3,4,5);
+const keyLight = new THREE.DirectionalLight(0xffe5c2,2.35);
+keyLight.position.set(-3.8,4.5,5);
 scene.add(keyLight);
 
-const fillLight=new THREE.DirectionalLight(0xfff4e5,1.1);
-fillLight.position.set(4,1,3);
+const fillLight = new THREE.DirectionalLight(0xe4f0df,0.72);
+fillLight.position.set(4,1.2,3.5);
 scene.add(fillLight);
 
-const rimLight=new THREE.PointLight(0xff8b26,10,10);
-rimLight.position.set(1,2,-3);
+const rimLight = new THREE.PointLight(0xff9638,5.2,12);
+rimLight.position.set(1.5,2.2,-3.2);
 scene.add(rimLight);
 
-const orangeGroup=new THREE.Group();
+const lowBounce = new THREE.PointLight(0xffb45c,0.55,7);
+lowBounce.position.set(-2,-2,2);
+scene.add(lowBounce);
+
+const orangeGroup = new THREE.Group();
 scene.add(orangeGroup);
 
-// DETERMINISTIC TEXTURE RANDOMNESS
-let seed=73421;
+/* -------------------------------------------------------
+   COLOR TEXTURE â broad natural mottling + fine peel pores
+   Pixel generation is used for the broad texture so mobile
+   browsers do not need hundreds of thousands of draw calls.
+------------------------------------------------------- */
+function createPeelTexture(){
+  const size = 1024;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d',{willReadFrequently:true});
+  const image = ctx.createImageData(size,size);
+  const data = image.data;
 
-function random(){
-  seed=(seed*16807)%2147483647;
-  return (seed-1)/2147483646;
-}
+  const warm = [239,119,9];
+  for(let y=0;y<size;y++){
+    for(let x=0;x<size;x++){
+      const i=(y*size+x)*4;
+      const u=x/size, v=y/size;
 
-// NATURAL ORANGE PEEL TEXTURE
-function createOrangeTexture(){
-  const size=2048;
-  const canvas=document.createElement('canvas');
-  canvas.width=size;
-  canvas.height=size;
-  const ctx=canvas.getContext('2d');
+      const broad =
+        Math.sin(u*17.0 + Math.sin(v*8.0)*1.7) * 0.5 +
+        Math.sin(v*23.0 + Math.cos(u*11.0)*1.3) * 0.32 +
+        Math.sin((u+v)*47.0) * 0.12;
 
-  const base=ctx.createLinearGradient(0,0,size,size);
-  base.addColorStop(0,'#f99519');
-  base.addColorStop(0.35,'#ed7908');
-  base.addColorStop(0.7,'#f5820b');
-  base.addColorStop(1,'#d96505');
+      const grain = (random()-0.5)*13;
+      const golden = Math.max(0,broad)*7;
+      const shadow = Math.max(0,-broad)*8;
 
-  ctx.fillStyle=base;
-  ctx.fillRect(0,0,size,size);
+      data[i]   = clamp(warm[0]+golden-shadow+grain,0,255);
+      data[i+1] = clamp(warm[1]+golden*0.78-shadow*0.72+grain*0.72,0,255);
+      data[i+2] = clamp(warm[2]+golden*0.20+grain*0.30,0,255);
+      data[i+3] = 255;
+    }
+  }
+  ctx.putImageData(image,0,0);
 
-  // Natural color variation
-  for(let i=0;i<2200;i++){
+  // Small, irregular oil-gland marks â varied size and contrast.
+  for(let i=0;i<19000;i++){
     const x=random()*size;
     const y=random()*size;
-    const r=15+random()*85;
+    const r=0.45+Math.pow(random(),2)*2.1;
+    const angle=random()*Math.PI;
+    const rx=r*(0.72+random()*0.7);
+    const ry=r*(0.65+random()*0.65);
 
-    const g=ctx.createRadialGradient(x,y,0,x,y,r);
-    g.addColorStop(0,
-      random()>0.5
-      ?'rgba(255,194,75,0.19)'
-      :'rgba(135,54,4,0.13)');
-    g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.ellipse(x,y,rx,ry,angle,0,Math.PI*2);
+    ctx.fillStyle=random()>0.53
+      ? `rgba(255,211,119,${0.10+random()*0.22})`
+      : `rgba(91,39,5,${0.07+random()*0.17})`;
+    ctx.fill();
 
-    ctx.fillStyle=g;
-    ctx.fillRect(x-r,y-r,r*2,r*2);
+    if(r>1.55){
+      ctx.beginPath();
+      ctx.arc(x-rx*0.22,y-ry*0.25,Math.max(0.25,r*0.22),0,Math.PI*2);
+      ctx.fillStyle='rgba(255,226,160,0.18)';
+      ctx.fill();
+    }
   }
 
-  // Fine orange oil pores
-  for(let i=0;i<160000;i++){
-    const x=random()*size;
-    const y=random()*size;
-    const r=0.45+random()*1.6;
-
+  // Very subtle uneven ripening flecks, never large polka dots.
+  for(let i=0;i<950;i++){
+    const x=random()*size,y=random()*size;
+    const r=2+random()*12;
     ctx.beginPath();
     ctx.arc(x,y,r,0,Math.PI*2);
-    ctx.fillStyle=random()>0.55
-      ?'rgba(255,222,143,0.42)'
-      :'rgba(103,43,5,0.28)';
+    ctx.fillStyle=random()>0.5
+      ? 'rgba(255,190,63,0.035)'
+      : 'rgba(119,55,8,0.035)';
     ctx.fill();
   }
 
-  // Irregular natural peel glands
-  for(let i=0;i<14000;i++){
-    const x=random()*size;
-    const y=random()*size;
-    const r=1.2+random()*3.2;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  return texture;
+}
 
-    ctx.beginPath();
-    ctx.ellipse(
-      x,y,r,r*(0.65+random()*0.6),
-      random()*Math.PI,0,Math.PI*2
-    );
-    ctx.fillStyle='rgba(116,53,8,0.17)';
-    ctx.fill();
+/* -------------------------------------------------------
+   BUMP TEXTURE â non-colour data: fine dimples and pores
+------------------------------------------------------- */
+function createPeelBump(){
+  const size=1024;
+  const canvas=document.createElement('canvas');
+  canvas.width=canvas.height=size;
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  const image=ctx.createImageData(size,size);
+  const data=image.data;
 
+  for(let y=0;y<size;y++){
+    for(let x=0;x<size;x++){
+      const i=(y*size+x)*4;
+      const wave=
+        Math.sin(x*0.105+Math.sin(y*0.07))*2.8+
+        Math.sin(y*0.13+Math.cos(x*0.045))*2.1;
+      const grain=(random()-0.5)*12;
+      const value=clamp(128+wave+grain,0,255);
+      data[i]=data[i+1]=data[i+2]=value;
+      data[i+3]=255;
+    }
+  }
+  ctx.putImageData(image,0,0);
+
+  for(let i=0;i<14500;i++){
+    const x=random()*size,y=random()*size;
+    const r=0.45+Math.pow(random(),2)*2.0;
+    const shade=random()>0.5?82:178;
     ctx.beginPath();
-    ctx.arc(x-r*0.25,y-r*0.25,r*0.35,0,Math.PI*2);
-    ctx.fillStyle='rgba(255,218,135,0.26)';
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${shade},${shade},${shade},${0.16+random()*0.30})`;
     ctx.fill();
   }
 
   const texture=new THREE.CanvasTexture(canvas);
-  texture.colorSpace=THREE.SRGBColorSpace;
-  texture.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  // Bump maps are data, so leave colorSpace at NoColorSpace.
+  texture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
   return texture;
 }
 
-// REALISTIC PEEL BUMP
-function createBumpTexture(){
-  const size=2048;
-  const canvas=document.createElement('canvas');
-  canvas.width=size;
-  canvas.height=size;
-  const ctx=canvas.getContext('2d');
+const peelTexture=createPeelTexture();
+const bumpTexture=createPeelBump();
 
-  ctx.fillStyle='#888888';
-  ctx.fillRect(0,0,size,size);
-
-  for(let i=0;i<170000;i++){
-    const x=random()*size;
-    const y=random()*size;
-    const r=0.5+random()*1.7;
-
-    ctx.beginPath();
-    ctx.arc(x,y,r,0,Math.PI*2);
-    ctx.fillStyle=random()>0.5?'#bdbdbd':'#555555';
-    ctx.fill();
-  }
-
-  for(let i=0;i<13000;i++){
-    const x=random()*size;
-    const y=random()*size;
-    const r=1+random()*3;
-
-    ctx.beginPath();
-    ctx.arc(x,y,r,0,Math.PI*2);
-    ctx.fillStyle='#484848';
-    ctx.fill();
-  }
-
-  const texture=new THREE.CanvasTexture(canvas);
-  return texture;
-}
-
-const peelTexture=createOrangeTexture();
-const bumpTexture=createBumpTexture();
-
-// KEEP ORIGINAL GEOMETRY AND SIZE
-const geometry=new THREE.SphereGeometry(1.35,192,144);
-
+/* -------------------------------------------------------
+   ORANGE BODY â keep the established 1.35 radius.
+   Gentle six-lobed contour and natural stem-end dimples.
+------------------------------------------------------- */
+const radius=1.35;
+const geometry=new THREE.SphereGeometry(radius,160,128);
 const positions=geometry.attributes.position;
 
 for(let i=0;i<positions.count;i++){
@@ -263,145 +312,256 @@ for(let i=0;i<positions.count;i++){
   const y=positions.getY(i);
   const z=positions.getZ(i);
 
-  const ny=y/1.35;
-  const pole=Math.exp(-Math.pow(Math.abs(ny)-0.97,2)*130);
+  const ny=clamp(y/radius,-1,1);
+  const theta=Math.atan2(z,x);
+  const capTop=Math.exp(-Math.pow((ny-0.982)/0.027,2));
+  const capBottom=Math.exp(-Math.pow((ny+0.982)/0.027,2));
+  const cap=capTop+capBottom;
 
-  const irregular=
-    1+
-    0.008*Math.sin(x*7.3+z*4.1)*Math.sin(y*5.7)+
-    0.004*Math.sin(z*11+y*3);
+  const sixLobes=Math.cos(theta*6+0.35)*0.0045*Math.pow(Math.abs(ny),2.4);
+  const softWobble=
+    0.0032*Math.sin(theta*3.0+ny*5.0)+
+    0.0022*Math.sin(theta*7.0-ny*8.0);
 
-  positions.setXYZ(
-    i,
-    x*irregular,
-    y*(1-0.035*pole),
-    z*irregular
-  );
+  const radialScale=1+sixLobes+softWobble-0.075*cap;
+  const newX=x*radialScale;
+  const newZ=z*radialScale;
+  const newY=y-0.035*capTop+0.025*capBottom;
+
+  positions.setXYZ(i,newX,newY,newZ);
 }
-
 geometry.computeVertexNormals();
 
 const orangeMaterial=new THREE.MeshStandardMaterial({
   map:peelTexture,
   bumpMap:bumpTexture,
-  bumpScale:0.052,
-  roughness:0.84,
-  metalness:0
+  bumpScale:0.026,
+  roughness:0.91,
+  metalness:0,
+  color:0xffffff
 });
-
 const orange=new THREE.Mesh(geometry,orangeMaterial);
 orangeGroup.add(orange);
 
-// TOP STEM SOCKET
-const socket=new THREE.Mesh(
-  new THREE.CylinderGeometry(0.075,0.095,0.035,32),
-  new THREE.MeshStandardMaterial({
-    color:0x9b4b0c,
-    roughness:1
-  })
+/* -------------------------------------------------------
+   TOP CALYX / STEM SOCKET â a shallow recessed centre
+------------------------------------------------------- */
+const socketMaterial=new THREE.MeshStandardMaterial({
+  color:0x79501d,
+  roughness:1
+});
+const socketDish=new THREE.Mesh(
+  new THREE.SphereGeometry(0.105,32,20),
+  socketMaterial
 );
-socket.position.set(0,1.32,0);
-orangeGroup.add(socket);
+socketDish.scale.set(1,0.18,1);
+socketDish.position.set(0,1.303,0);
+orangeGroup.add(socketDish);
 
-// STEM
-const stem=new THREE.Mesh(
-  new THREE.CylinderGeometry(0.035,0.055,0.16,16),
-  new THREE.MeshStandardMaterial({
-    color:0x59401d,
-    roughness:1
-  })
+const socketRim=new THREE.Mesh(
+  new THREE.TorusGeometry(0.092,0.012,8,40),
+  new THREE.MeshStandardMaterial({color:0x9a5b1e,roughness:1})
 );
-stem.position.set(0,1.40,0);
-stem.rotation.z=-0.12;
+socketRim.rotation.x=Math.PI/2;
+socketRim.position.set(0,1.316,0);
+orangeGroup.add(socketRim);
+
+// Five small, tapered sepals that sit close to the fruit.
+const sepalMaterial=new THREE.MeshStandardMaterial({
+  color:0x45632a,
+  roughness:0.96,
+  side:THREE.DoubleSide
+});
+function makeSepal(angle){
+  const shape=new THREE.Shape();
+  shape.moveTo(0,0);
+  shape.quadraticCurveTo(0.045,0.045,0.12,0.018);
+  shape.quadraticCurveTo(0.065,-0.012,0,0);
+  const mesh=new THREE.Mesh(new THREE.ShapeGeometry(shape,12),sepalMaterial);
+  mesh.position.set(Math.cos(angle)*0.035,1.315,Math.sin(angle)*0.035);
+  mesh.rotation.y=-angle;
+  mesh.rotation.x=-0.12;
+  mesh.rotation.z=0.12*Math.sin(angle);
+  orangeGroup.add(mesh);
+}
+for(let i=0;i<5;i++) makeSepal(i*Math.PI*2/5);
+
+// Slightly bent woody stem.
+const stemCurve=new THREE.CatmullRomCurve3([
+  new THREE.Vector3(0,1.31,0),
+  new THREE.Vector3(-0.012,1.36,0.004),
+  new THREE.Vector3(-0.035,1.43,0.012),
+  new THREE.Vector3(-0.052,1.48,0.018)
+]);
+const stem=new THREE.Mesh(
+  new THREE.TubeGeometry(stemCurve,18,0.027,9,false),
+  new THREE.MeshStandardMaterial({color:0x65431f,roughness:1})
+);
 orangeGroup.add(stem);
 
-// GREEN SEPALS
-for(let i=0;i<5;i++){
-  const angle=i/5*Math.PI*2;
+/* -------------------------------------------------------
+   LEAF â curved leaf surface, central vein and side veins
+------------------------------------------------------- */
+const leafGroup=new THREE.Group();
+leafGroup.position.set(-0.015,1.365,0.005);
+leafGroup.rotation.set(-0.18,0.1,0.28);
+orangeGroup.add(leafGroup);
 
-  const sepal=new THREE.Mesh(
-    new THREE.ConeGeometry(0.075,0.22,12),
-    new THREE.MeshStandardMaterial({
-      color:0x3d6325,
-      roughness:0.95
-    })
-  );
+const leafLength=0.78;
+const leafSegments=32;
+const leafAcross=12;
+const leafVertices=[];
+const leafIndices=[];
+const leafUV=[];
 
-  sepal.position.set(
-    Math.cos(angle)*0.09,
-    1.28,
-    Math.sin(angle)*0.09
-  );
-  sepal.rotation.z=Math.cos(angle)*0.7;
-  sepal.rotation.x=Math.sin(angle)*0.7;
-  orangeGroup.add(sepal);
+for(let i=0;i<=leafSegments;i++){
+  const t=i/leafSegments;
+  const width=0.145*Math.pow(Math.sin(Math.PI*t),0.82);
+  for(let j=0;j<=leafAcross;j++){
+    const v=(j/leafAcross)*2-1;
+    const x=t*leafLength;
+    const y=v*width;
+    const z=0.025*Math.sin(Math.PI*t)*(1-Math.abs(v)*0.55);
+    leafVertices.push(x,y,z);
+    leafUV.push(t,j/leafAcross);
+  }
+}
+for(let i=0;i<leafSegments;i++){
+  for(let j=0;j<leafAcross;j++){
+    const a=i*(leafAcross+1)+j;
+    const b=a+leafAcross+1;
+    leafIndices.push(a,b,a+1,b,b+1,a+1);
+  }
+}
+const leafGeometry=new THREE.BufferGeometry();
+leafGeometry.setAttribute('position',new THREE.Float32BufferAttribute(leafVertices,3));
+leafGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(leafUV,2));
+leafGeometry.setIndex(leafIndices);
+leafGeometry.computeVertexNormals();
+
+const leafMaterial=new THREE.MeshStandardMaterial({
+  color:0x477333,
+  roughness:0.88,
+  side:THREE.DoubleSide
+});
+leafGroup.add(new THREE.Mesh(leafGeometry,leafMaterial));
+
+const veinMaterial=new THREE.MeshStandardMaterial({
+  color:0x9aaa62,
+  roughness:0.95
+});
+function addVein(points,radiusValue){
+  const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+  leafGroup.add(new THREE.Mesh(
+    new THREE.TubeGeometry(curve,12,radiusValue,5,false),
+    veinMaterial
+  ));
 }
 
-// LEAF
-const leafShape=new THREE.Shape();
-leafShape.moveTo(0,0);
-leafShape.quadraticCurveTo(0.35,0.28,0.75,0.08);
-leafShape.quadraticCurveTo(0.38,-0.18,0,0);
+// Central midrib.
+addVein([[0,0,0.031],[0.22,0,0.035],[0.48,0,0.03],[0.76,0,0.006]],0.004);
 
-const leaf=new THREE.Mesh(
-  new THREE.ShapeGeometry(leafShape,32),
-  new THREE.MeshStandardMaterial({
-    color:0x416d2d,
-    side:THREE.DoubleSide,
-    roughness:0.9
-  })
+// Fine side veins, angled naturally toward the leaf edge.
+for(let k=1;k<=5;k++){
+  const t=k/6;
+  const x=t*leafLength;
+  const w=0.145*Math.pow(Math.sin(Math.PI*t),0.82)*0.88;
+  for(const side of [-1,1]){
+    addVein([
+      [x,0,0.032],
+      [x+0.055,side*w*0.48,0.038],
+      [Math.min(0.77,x+0.105),side*w,0.018]
+    ],0.0019);
+  }
+}
+
+/* -------------------------------------------------------
+   BOTTOM NAVEL â small natural blossom scar
+------------------------------------------------------- */
+const navelGroup=new THREE.Group();
+navelGroup.position.set(0,-1.326,0);
+navelGroup.rotation.x=Math.PI;
+orangeGroup.add(navelGroup);
+
+const navelRing=new THREE.Mesh(
+  new THREE.TorusGeometry(0.052,0.009,7,28),
+  new THREE.MeshStandardMaterial({color:0xb65b16,roughness:1})
 );
-leaf.position.set(0.04,1.34,0);
-leaf.rotation.x=-0.25;
-leaf.rotation.z=0.2;
-leaf.scale.set(0.9,0.9,0.9);
-orangeGroup.add(leaf);
+navelGroup.add(navelRing);
 
-// SOFT CONTACT SHADOW
+const navelCentre=new THREE.Mesh(
+  new THREE.CircleGeometry(0.032,24),
+  new THREE.MeshStandardMaterial({color:0x8c4817,roughness:1,side:THREE.DoubleSide})
+);
+navelCentre.position.z=0.002;
+navelGroup.add(navelCentre);
+
+/* -------------------------------------------------------
+   SOFT CONTACT SHADOW
+------------------------------------------------------- */
 const shadowCanvas=document.createElement('canvas');
 shadowCanvas.width=256;
 shadowCanvas.height=256;
-
 const shadowCtx=shadowCanvas.getContext('2d');
-const shadowGradient=shadowCtx.createRadialGradient(
-  128,128,5,128,128,120
-);
-shadowGradient.addColorStop(0,'rgba(0,0,0,0.45)');
+const shadowGradient=shadowCtx.createRadialGradient(128,128,5,128,128,120);
+shadowGradient.addColorStop(0,'rgba(0,0,0,0.42)');
+shadowGradient.addColorStop(0.42,'rgba(0,0,0,0.18)');
 shadowGradient.addColorStop(1,'rgba(0,0,0,0)');
-
 shadowCtx.fillStyle=shadowGradient;
 shadowCtx.fillRect(0,0,256,256);
 
 const shadow=new THREE.Mesh(
-  new THREE.PlaneGeometry(3.4,1.8),
+  new THREE.PlaneGeometry(3.5,1.9),
   new THREE.MeshBasicMaterial({
     map:new THREE.CanvasTexture(shadowCanvas),
     transparent:true,
-    depthWrite:false
+    depthWrite:false,
+    opacity:0.9
   })
 );
 shadow.rotation.x=-Math.PI/2;
-shadow.position.y=-1.55;
+shadow.position.set(0,-1.55,0);
 scene.add(shadow);
 
-// ANIMATION
+/* -------------------------------------------------------
+   ANIMATION + RESPONSIVE RESIZE
+------------------------------------------------------- */
+loadMessage.remove();
+
+let animationFrame=0;
 function animate(){
-  requestAnimationFrame(animate);
+  animationFrame=requestAnimationFrame(animate);
   controls.update();
   renderer.render(scene,camera);
 }
 animate();
 
-// RESPONSIVE
-window.addEventListener('resize',()=>{
+const resizeObserver=new ResizeObserver(()=>{
   const width=container.clientWidth;
   const height=container.clientHeight;
-
+  if(!width||!height) return;
   camera.aspect=width/height;
   camera.updateProjectionMatrix();
   renderer.setSize(width,height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));
+});
+resizeObserver.observe(container);
+
+window.addEventListener('pagehide',()=>{
+  cancelAnimationFrame(animationFrame);
+  resizeObserver.disconnect();
+  controls.dispose();
+  renderer.dispose();
+},{once:true});
+
+renderer.domElement.addEventListener('webglcontextlost',event=>{
+  event.preventDefault();
+  loadMessage.textContent='3D VIEW PAUSED â RELOAD THE PAGE';
+  loadMessage.style.display='grid';
+});
+renderer.domElement.addEventListener('webglcontextrestored',()=>{
+  loadMessage.style.display='none';
 });
 </script>
-
 </body>
 </html>
