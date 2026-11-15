@@ -38,11 +38,8 @@ footer{text-align:center;color:#a9b5a9;font-size:12px}
 <footer>ORANGE · INTERACTIVE 3D MODEL</footer>
 
 <script type="module">
-import * as THREE from
-'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
-import {OrbitControls} from
-'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
-
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 const container=document.getElementById('scene');
 const scene=new THREE.Scene();
 scene.background=new THREE.Color('#101410');
